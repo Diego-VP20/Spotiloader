@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Reflection.Metadata;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Spectre.Console;
 using Spotiloader.Config;
@@ -35,7 +36,7 @@ namespace Spotiloader
             await PresentProgramAsync();
             
             // Check for config file
-            var config = await LoadConfigFileAsync();
+            var config = await ConfigManager.InitializeConfigAsync();
         }
 
         private static async Task PresentProgramAsync()
@@ -44,46 +45,6 @@ namespace Spotiloader
             AnsiConsole.Write(new FigletText("Spotiloader").Centered().Color(Color.Green));
             AnsiConsole.Write(new Markup("[green]V1.0 by Diego-VP20[/]").Centered());
             await Task.Delay(1000);
-        }
-        
-        private static async Task<SpotifyApplication> LoadConfigFileAsync()
-        {
-            var config = new SpotifyApplication();
-
-            await AnsiConsole.Status()
-                .AutoRefresh(true)
-                .StartAsync("Checking configuration...", async ctx =>
-                {
-                    ctx.Spinner(Spinner.Known.Circle);
-                    ctx.SpinnerStyle(Style.Parse("green"));
-
-                    await Task.Delay(3000);
-                    
-                    if (!ConfigManager.IsConfigFile())
-                    {
-                        ctx.Status("[orange3 bold]First launch detected[/]");
-                        await Task.Delay(1000);
-                        ctx.Status("[green bold]Creating config file...[/]");
-                        await Task.Delay(1000);
-                        ctx.Status("[green bold]Done.[/]");
-
-                        await Task.Delay(3000);
-                        
-                        config = await ConfigManager.GetConfig();
-                    }
-                    else
-                    {
-                        ctx.Status("[green bold]Loading Config file...[/]");
-                        await Task.Delay(1000);
-                        ctx.Status("[green bold]Done.[/]");
-
-                        await Task.Delay(3000);
-                        
-                        config = await ConfigManager.GetConfig();
-                    }
-                });
-
-            return config;
         }
     }
 }
