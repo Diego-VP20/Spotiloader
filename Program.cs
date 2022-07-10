@@ -1,5 +1,4 @@
-﻿using System.Reflection.Metadata;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Spectre.Console;
 using Spotiloader.Config;
