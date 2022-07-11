@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Spectre.Console;
+using Spotiloader.API;
 using Spotiloader.Config;
 
 namespace Spotiloader
@@ -11,6 +12,7 @@ namespace Spotiloader
         {
             return new ServiceCollection()
                 .AddLogging(l => l.AddSerilog())
+                .AddSingleton<SpotifyService>()
                 .BuildServiceProvider();
         }
 
@@ -23,6 +25,12 @@ namespace Spotiloader
                 .CreateLogger();
         }
         
+        private static void InitSpotifyService(IServiceProvider serviceProvider, SpotifyApplication config)
+        {
+            var spotifyService = serviceProvider.GetRequiredService<SpotifyService>();
+            spotifyService.Init(config);
+        }
+        
         public static async Task Main()
         {
             // Init logger configuration
@@ -31,19 +39,39 @@ namespace Spotiloader
             // Configure services
             await using var serviceProvider = ConfigureServices();
             
-            // Present program to user
-            await PresentProgramAsync();
+            // Present program banner to user.
+            PresentHeader();
             
-            // Check for config file
+            // Initialize config. (Create, Validate, Load...)
             var config = await ConfigManager.InitializeConfigAsync();
+            
+            // Initialize Spotify service class.
+            InitSpotifyService(serviceProvider, config);
+            
+            // Present header again.
+            PresentHeader(true);
+            
+            // Present menu to user.
+            await new Menu.Menu(serviceProvider).Run();
+            
+            // Exit program.
+            GracefulExit();
         }
 
-        private static async Task PresentProgramAsync()
+        private static void GracefulExit()
+        {
+            AnsiConsole.MarkupLine("[green bold]Thank you for using Spotiloader![/]");
+            Environment.Exit(0);
+        }
+
+        private static void PresentHeader(bool skipCredits = false)
         {
             AnsiConsole.Clear();
             AnsiConsole.Write(new FigletText("Spotiloader").Centered().Color(Color.Green));
-            AnsiConsole.Write(new Markup("[green]V1.0 by Diego-VP20[/]").Centered());
-            await Task.Delay(1000);
+            if (!skipCredits)
+            {
+                AnsiConsole.Write(new Markup("[green]V1.0 by Diego-VP20[/]").Centered());
+            }
         }
     }
 }
