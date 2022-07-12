@@ -3,6 +3,7 @@ using Serilog;
 using Spectre.Console;
 using Spotiloader.API;
 using Spotiloader.Config;
+using Swan.Logging;
 
 namespace Spotiloader
 {
@@ -18,6 +19,8 @@ namespace Spotiloader
 
         private static void InitLoggerConfiguration()
         {
+            Logger.UnregisterLogger<ConsoleLogger>();
+            
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
                 .Enrich.FromLogContext()
@@ -25,10 +28,10 @@ namespace Spotiloader
                 .CreateLogger();
         }
         
-        private static void InitSpotifyService(IServiceProvider serviceProvider, SpotifyApplication config)
+        private static async Task InitSpotifyServiceAsync(IServiceProvider serviceProvider, SpotifyApplication config)
         {
             var spotifyService = serviceProvider.GetRequiredService<SpotifyService>();
-            spotifyService.Init(config);
+            await spotifyService.Init(config);
         }
         
         public static async Task Main()
@@ -46,7 +49,7 @@ namespace Spotiloader
             var config = await ConfigManager.InitializeConfigAsync();
             
             // Initialize Spotify service class.
-            InitSpotifyService(serviceProvider, config);
+            await InitSpotifyServiceAsync(serviceProvider, config);
             
             // Present header again.
             PresentHeader(true);
