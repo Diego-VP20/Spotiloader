@@ -37,7 +37,7 @@ public static class ConfigManager
 
     private static async Task<SpotifyApplication> GetConfigAsync()
     {
-        return JsonConvert.DeserializeObject<SpotifyApplication>(await File.ReadAllTextAsync(ConfigFile));
+        return JsonConvert.DeserializeObject<SpotifyApplication>(await File.ReadAllTextAsync(ConfigFile))!;
     }
 
     private static bool ConfigIsEmpty(SpotifyApplication config)
@@ -121,10 +121,16 @@ public static class ConfigManager
         AnsiConsole.MarkupLine("[blue bold]To get the config please visit: https://developer.spotify.com/dashboard/login[/]");
         AnsiConsole.MarkupLine("[blue bold]1. Login[/]");
         AnsiConsole.MarkupLine("[blue bold]2. Create an application[/]");
-        AnsiConsole.MarkupLine("[blue bold]3. Copy and paste the Client ID and Client Secret here.[/]");
+        AnsiConsole.MarkupLine("[blue bold]3. Copy and paste the Client ID and Client Secret here[/]");
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine("[red bold]Your data will NOT be shared with anyone![/]");
         AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[red bold]Before you press enter, do the following:[/]");
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[blue bold]1. Click \"EDIT SETTINGS\"[/]");
+        AnsiConsole.MarkupLine("[blue bold]2. Under \"Redirect URIs\" add the following: http://localhost:5000/callback[/]");
+        AnsiConsole.MarkupLine("[blue bold]3. Click \"SAVE\"[/]");
+        
         
         var clientId = AnsiConsole.Ask<string>("[blue bold]Client ID:[/]");
         var clientSecret = AnsiConsole.Ask<string>("[blue bold]Client Secret:[/]");
