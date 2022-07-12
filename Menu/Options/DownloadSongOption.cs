@@ -1,4 +1,5 @@
-﻿using Spotiloader.API;
+﻿using Spectre.Console;
+using Spotiloader.API;
 
 namespace Spotiloader.Menu.Options;
 
@@ -16,7 +17,8 @@ public class DownloadSongOption : IMenuItem
     
     public async Task Action()
     {
-        _spotifyService.Test();
+        var track = AnsiConsole.Ask<string>("[blue bold]Enter a track url: [/]");
+        _spotifyService.Test(track);
         await Task.Delay(1000);
     }
 }
