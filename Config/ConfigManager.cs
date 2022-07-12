@@ -130,7 +130,7 @@ public static class ConfigManager
         AnsiConsole.MarkupLine("[blue bold]1. Click \"EDIT SETTINGS\"[/]");
         AnsiConsole.MarkupLine("[blue bold]2. Under \"Redirect URIs\" add the following: http://localhost:5000/callback[/]");
         AnsiConsole.MarkupLine("[blue bold]3. Click \"SAVE\"[/]");
-        
+        AnsiConsole.WriteLine();
         
         var clientId = AnsiConsole.Ask<string>("[blue bold]Client ID:[/]");
         var clientSecret = AnsiConsole.Ask<string>("[blue bold]Client Secret:[/]");
@@ -142,19 +142,8 @@ public static class ConfigManager
                 ctx.Spinner(Spinner.Known.Dots);
                 ctx.SpinnerStyle(Style.Parse("green"));
                 ctx.Status("[green bold]Saving config...[/]");
-                
-                var configTask = CreateRepairOrSaveConfigFile(clientId, clientSecret);
 
-                await Task.Delay(1000);
-                
-                await configTask.ContinueWith(_ =>
-                {
-                    ctx.Status("[green bold]Done.[/]");
-                });
-        
-                AnsiConsole.Clear();
-                
-                return await configTask;
+                config = await CreateRepairOrSaveConfigFile(clientId, clientSecret);
             });
         return config;
     }
