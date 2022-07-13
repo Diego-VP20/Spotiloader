@@ -45,6 +45,8 @@ public static class ConfigManager
         return string.IsNullOrEmpty(config.ClientId) || string.IsNullOrEmpty(config.ClientSecret);
     }
 
+    public static string GetConfigFilePath() => ConfigFile;
+    
     public static async Task<SpotifyApplication> InitializeConfigAsync()
     {
         var config = new SpotifyApplication

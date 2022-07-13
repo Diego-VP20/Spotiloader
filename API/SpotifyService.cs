@@ -18,12 +18,16 @@ public class SpotifyService
     private SpotifyApplication _spotifyApiSettings = null!;
     private EmbedIOAuthServer _server = null!;
     private SpotifyClient? _client;
+    private bool _isAuthenticated;
     
-    public async Task Init(SpotifyApplication config)
+    public bool Init(SpotifyApplication config)
     {
         _spotifyApiSettings = config;
-        
-        await StartLoginProcess();
+
+        var authTask = StartLoginProcess();
+        authTask.Wait();
+
+        return _isAuthenticated;
     }
 
     private async Task StartLoginProcess()
@@ -55,15 +59,19 @@ public class SpotifyService
         );
 
         _client = new SpotifyClient(tokenResponse.AccessToken);
+        
+        _isAuthenticated = true;
     }
 
     private async Task OnErrorReceived(object sender, string error, string? state)
     {
         AnsiConsole.MarkupLine($"[red bold]Error whilst logging in: {error}[/]");
         await _server.Stop();
+        
+        _isAuthenticated = false;
     }
 
-    private LinkType GetLinkType(string link, out string? id)
+    private static LinkType GetLinkType(string link, out string? id)
     {
         if (link.StartsWith("https://open.spotify.com/track/"))
         {
@@ -87,6 +95,8 @@ public class SpotifyService
         return LinkType.Invalid;
     }
     
+    public bool IsAuthenticated() => _isAuthenticated;
+
     public async void Test(string url)
     {
         if (GetLinkType(url, out var id) == LinkType.Track)

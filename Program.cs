@@ -28,10 +28,10 @@ namespace Spotiloader
                 .CreateLogger();
         }
         
-        private static async Task InitSpotifyServiceAsync(IServiceProvider serviceProvider, SpotifyApplication config)
+        private static bool InitSpotifyService(IServiceProvider serviceProvider, SpotifyApplication config)
         {
             var spotifyService = serviceProvider.GetRequiredService<SpotifyService>();
-            await spotifyService.Init(config);
+            return spotifyService.Init(config);
         }
         
         public static async Task Main()
@@ -49,7 +49,10 @@ namespace Spotiloader
             var config = await ConfigManager.InitializeConfigAsync();
             
             // Initialize Spotify service class.
-            await InitSpotifyServiceAsync(serviceProvider, config);
+            if (!InitSpotifyService(serviceProvider, config))
+            {
+                NonGracefulExit($"Failed to initialize Spotify service. Login failed. Update your credentials in {ConfigManager.GetConfigFilePath()} and try again.");
+            }
             
             // Present header again.
             PresentHeader(true);
@@ -67,6 +70,14 @@ namespace Spotiloader
             Environment.Exit(0);
         }
 
+        private static void NonGracefulExit(string message = "")
+        {
+            AnsiConsole.Clear();
+            AnsiConsole.MarkupLine("[red bold]Spotiloader has encountered an error![/]");
+            AnsiConsole.MarkupLine($"[red bold]{message}[/]");
+            Environment.Exit(1);
+        }
+        
         private static void PresentHeader(bool skipCredits = false)
         {
             AnsiConsole.Clear();
