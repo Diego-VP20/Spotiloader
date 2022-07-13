@@ -28,10 +28,11 @@ namespace Spotiloader
                 .CreateLogger();
         }
         
-        private static bool InitSpotifyService(IServiceProvider serviceProvider, SpotifyApplication config)
+        private static async Task<bool> InitSpotifyService(IServiceProvider serviceProvider, SpotifyApplication config)
         {
             var spotifyService = serviceProvider.GetRequiredService<SpotifyService>();
-            return spotifyService.Init(config);
+            await spotifyService.Init(config);
+            return spotifyService.IsAuthenticated();
         }
         
         public static async Task Main()
@@ -49,7 +50,7 @@ namespace Spotiloader
             var config = await ConfigManager.InitializeConfigAsync();
             
             // Initialize Spotify service class.
-            if (!InitSpotifyService(serviceProvider, config))
+            if(!await InitSpotifyService(serviceProvider, config))
             {
                 NonGracefulExit($"Failed to initialize Spotify service. Login failed. Update your credentials in {ConfigManager.GetConfigFilePath()} and try again.");
             }

@@ -1,6 +1,5 @@
 ﻿using Spectre.Console;
 using SpotifyAPI.Web;
-using SpotifyAPI.Web.Auth;
 using Spotiloader.Config;
 
 namespace Spotiloader.API;
@@ -16,59 +15,30 @@ public enum LinkType
 public class SpotifyService
 {
     private SpotifyApplication _spotifyApiSettings = null!;
-    private EmbedIOAuthServer _server = null!;
     private SpotifyClient? _client;
-    private bool _isAuthenticated;
     
-    public bool Init(SpotifyApplication config)
+    public async Task Init(SpotifyApplication config)
     {
         _spotifyApiSettings = config;
 
-        var authTask = StartLoginProcess();
-        authTask.Wait();
-
-        return _isAuthenticated;
+        await StartLoginProcess();
     }
 
     private async Task StartLoginProcess()
     {
-        _server = new EmbedIOAuthServer(new Uri("http://localhost:5000/callback"), 5000);
-        await _server.Start();
-
-        _server.AuthorizationCodeReceived += OnAuthorizationCodeReceived;
-        _server.ErrorReceived += OnErrorReceived;
-
-        var request = new LoginRequest(_server.BaseUri, _spotifyApiSettings.ClientId, LoginRequest.ResponseType.Code)
+        try
         {
-            Scope = new List<string> { Scopes.UserReadEmail }
-        };
-        
-        BrowserUtil.Open(request.ToUri());
-    }
-    
-    private async Task OnAuthorizationCodeReceived(object sender, AuthorizationCodeResponse response)
-    {
-        await _server.Stop();
+            var config = SpotifyClientConfig.CreateDefault();
 
-        var config = SpotifyClientConfig.CreateDefault();
-        var tokenResponse = await new OAuthClient(config).RequestToken(
-            new AuthorizationCodeTokenRequest(
-                _spotifyApiSettings.ClientId, _spotifyApiSettings.ClientSecret,
-                response.Code, new Uri("http://localhost:5000/callback")
-            )
-        );
+            var request = new ClientCredentialsRequest(_spotifyApiSettings.ClientId, _spotifyApiSettings.ClientSecret);
+            var response = await new OAuthClient(config).RequestToken(request);
 
-        _client = new SpotifyClient(tokenResponse.AccessToken);
-        
-        _isAuthenticated = true;
-    }
-
-    private async Task OnErrorReceived(object sender, string error, string? state)
-    {
-        AnsiConsole.MarkupLine($"[red bold]Error whilst logging in: {error}[/]");
-        await _server.Stop();
-        
-        _isAuthenticated = false;
+            _client = new SpotifyClient(config.WithToken(response.AccessToken));
+        }
+        catch (APIException)
+        {
+            
+        }
     }
 
     private static LinkType GetLinkType(string link, out string? id)
@@ -95,7 +65,7 @@ public class SpotifyService
         return LinkType.Invalid;
     }
     
-    public bool IsAuthenticated() => _isAuthenticated;
+    public bool IsAuthenticated() => _client != null;
 
     public async void Test(string url)
     {
