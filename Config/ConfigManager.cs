@@ -47,7 +47,7 @@ public static class ConfigManager
 
     public static string GetConfigFilePath() => ConfigFile;
     
-    public static async Task<SpotifyApplication> InitializeConfigAsync()
+    public static async Task<SpotifyApplication> InitializeConfigAsync(bool updatingConfig = false)
     {
         var config = new SpotifyApplication
         {
@@ -115,11 +115,14 @@ public static class ConfigManager
                 config = await configTask;
             });
 
-        if (!ConfigIsEmpty(config)) return config;
+        if (!ConfigIsEmpty(config) && !updatingConfig) return config;
         
         AnsiConsole.WriteLine();
-        AnsiConsole.MarkupLine("[orange3 bold]Config is currently empty. Please fill in the config file.[/]");
-        AnsiConsole.WriteLine();
+        if (!updatingConfig)
+        {
+            AnsiConsole.MarkupLine("[orange3 bold]Config is currently empty. Please fill in the config file.[/]");
+            AnsiConsole.WriteLine();
+        }
         AnsiConsole.MarkupLine("[blue bold]To get the config please visit: https://developer.spotify.com/dashboard/login[/]");
         AnsiConsole.MarkupLine("[blue bold]1. Login[/]");
         AnsiConsole.MarkupLine("[blue bold]2. Create an application[/]");
