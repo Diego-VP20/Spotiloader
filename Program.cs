@@ -13,7 +13,9 @@ namespace Spotiloader
         {
             return new ServiceCollection()
                 .AddLogging(l => l.AddSerilog())
+                .AddSingleton<YoutubeService>()
                 .AddSingleton<SpotifyService>()
+                .AddSingleton<Menu.Menu>()
                 .BuildServiceProvider();
         }
 
@@ -37,32 +39,40 @@ namespace Spotiloader
         
         public static async Task Main()
         {
-            // Init logger configuration
-            InitLoggerConfiguration();
-            
-            // Configure services
-            await using var serviceProvider = ConfigureServices();
-            
-            // Present program banner to user.
-            PresentHeader();
-            
-            // Initialize config. (Create, Validate, Load...)
-            var config = await ConfigManager.InitializeConfigAsync();
-            
-            // Initialize Spotify service class.
-            if(!await InitSpotifyService(serviceProvider, config))
+            try
             {
-                NonGracefulExit($"Failed to initialize Spotify service. Login failed. Update your credentials in {ConfigManager.GetConfigFilePath()} and try again.");
+// Init logger configuration
+                InitLoggerConfiguration();
+            
+                // Configure services
+                await using var serviceProvider = ConfigureServices();
+            
+                // Present program banner to user.
+                PresentHeader();
+            
+                // Initialize config. (Create, Validate, Load...)
+                var config = await ConfigManager.InitializeConfigAsync();
+            
+                // Initialize Spotify service class.
+                var initSpotifyServiceSuccess = await InitSpotifyService(serviceProvider, config);
+
+                // Present header again.
+                PresentHeader(true);
+
+                // Present menu to user.
+                var menu = serviceProvider.GetRequiredService<Menu.Menu>();
+            
+                menu.IsAuthenticated = initSpotifyServiceSuccess;
+            
+                await menu.Run();
+
+                // Exit program.
+                GracefulExit();
             }
-            
-            // Present header again.
-            PresentHeader(true);
-            
-            // Present menu to user.
-            await new Menu.Menu(serviceProvider).Run();
-            
-            // Exit program.
-            GracefulExit();
+            catch (Exception e)
+            {
+                NonGracefulExit(e.Message);
+            }
         }
 
         private static void GracefulExit()
