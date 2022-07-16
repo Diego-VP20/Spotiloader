@@ -50,8 +50,10 @@ public class YoutubeService
                                 var manifest = await _client.Videos.Streams.GetManifestAsync(video.Id);
             
                                 var streamInfo = manifest.GetAudioOnlyStreams().GetWithHighestBitrate();
-            
-                                await _client.Videos.Streams.DownloadAsync(streamInfo, BasePath + video.Title + ".mp3");
+
+                                var sanitizedTitle = SanitizeTitle(video.Title);
+                                
+                                await _client.Videos.Streams.DownloadAsync(streamInfo, $@"{BasePath}{sanitizedTitle}.mp3");
 
                                 return DownloadStatus.Downloaded;
                             }
@@ -72,5 +74,16 @@ public class YoutubeService
             }
         }
         return DownloadStatus.NotFound;
+    }
+
+    private static string SanitizeTitle(string videoTitle)
+    {
+        var charsToEvade = new[]
+        {
+            '#', '<', '>', '$', '+', '%', '!', '`', '&', '*', '\'', '|', '{', '}', '?', '"', '=', 
+            '/', ':', '\\', '@'
+        };
+
+        return charsToEvade.Aggregate(videoTitle, (current, character) => current.Replace(character.ToString(), string.Empty));
     }
 }
