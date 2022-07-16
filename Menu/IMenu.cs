@@ -6,7 +6,5 @@ public interface IMenu
     public void LoadOptions();
     public void Show();
     public Task Run();
-    public void Execute(IMenuItem item);
-    public void DisableMenuItem(IMenuItem item);
-    public void EnableMenuItem(IMenuItem item);
+    public Task Execute(int number);
 }
