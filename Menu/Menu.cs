@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
+using Spotiloader.API;
 
 namespace Spotiloader.Menu;
 
@@ -8,20 +9,23 @@ public class Menu : IMenu
 {
     public List<IMenuItem> MenuItems { get; set; } = new();
     private readonly IServiceProvider _serviceProvider;
-    public Menu(IServiceProvider serviceProvider)
+    private readonly SpotifyService _spotifyService;
+    public bool IsAuthenticated;
+    public Menu(IServiceProvider serviceProvider, SpotifyService spotifyService)
     {
         _serviceProvider = serviceProvider;
-        LoadOptions();
+        _spotifyService = spotifyService;
     }
 
     public void LoadOptions()
     {
+        MenuItems.Clear();
+        
         const string nspace = "Spotiloader.Menu.Options";
         var counter = 1;
         
         var classes = from t in Assembly.GetExecutingAssembly().GetTypes()
-            where t.IsClass && t.Namespace == nspace && typeof(IMenuItem).IsAssignableFrom(t)
-            select t;
+            where t.IsClass && t.Namespace == nspace && typeof(IMenuItem).IsAssignableFrom(t) select t;
 
         foreach (var menuOption in classes)
         {
@@ -30,43 +34,44 @@ public class Menu : IMenu
             if (instance is not IMenuItem menuItem) continue;
             
             menuItem.Id = counter;
+
+            menuItem.Enabled = !menuOption.GetCustomAttributes().Any(a => a is RequiresSpotifyAuthentication) || IsAuthenticated;
+            
             MenuItems.Add(menuItem);
             
             counter++;
-        
         }
     }
 
-    public void Show()
+    public async void Show()
     {
         AnsiConsole.Clear();
+
+        if (!IsAuthenticated)
+        {
+            AnsiConsole.MarkupLine("[purple bold](Unauthenticated) You won't be able to use the functions until" +
+                                   " you authenticate with Spotify. Please update your credentials![/]");
+        }
+        else
+        {
+            AnsiConsole.MarkupLine($"[green bold](Authenticated) Welcome![/]");
+        }
         
-        var counter = 1;
-        
+        AnsiConsole.WriteLine();
+
         AnsiConsole.MarkupLine("[red bold]0. Exit[/]");
 
-        foreach (var item in MenuItems)
+        foreach (var item in MenuItems.Where(item => item.Enabled))
         {
-            AnsiConsole.MarkupLine($"[blue]{counter}. {item.Name}[/]");
-            counter++;
+            AnsiConsole.MarkupLine($"[blue]{item.Id}. {item.Name}[/]");
         }
         
         AnsiConsole.WriteLine();
     }
 
-    public void Execute(IMenuItem item)
+    public async Task Execute(int number)
     {
-        item.Action();
-    }
-
-    public void DisableMenuItem(IMenuItem item)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void EnableMenuItem(IMenuItem item)
-    {
-        throw new NotImplementedException();
+        await MenuItems.First(i => i.Id == number).Action();
     }
 
     private async Task<bool> IsValidChoice(string unparsedNumber)
@@ -82,7 +87,12 @@ public class Menu : IMenu
         switch (number)
         {
             case >= 1 when number <= MenuItems.Count:
-                return true;
+                
+                if (MenuItems.First(i => i.Id == number).Enabled) return true;
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[orange3 bold]Invalid choice[/]");
+                await Task.Delay(1000);
+                return false;
             case 0:
                 return true;
             default:
@@ -95,30 +105,31 @@ public class Menu : IMenu
 
     public async Task Run()
     {
+        LoadOptions();
+        
         while (true)
         {
             Show();
             
             var unparsedNumber = AnsiConsole.Ask<string>("[orange3 bold]Enter your choice:[/]");
 
-            if (await IsValidChoice(unparsedNumber))
-            {
-                var number = int.Parse(unparsedNumber);
+            if (!await IsValidChoice(unparsedNumber)) continue;
+            
+            var number = int.Parse(unparsedNumber);
 
-                if (number == 0)
-                {
-                    AnsiConsole.Clear();
-                    break;
-                }
-                
+            if (number == 0)
+            {
                 AnsiConsole.Clear();
-                
-                await MenuItems.Find(i => i.Id == number)!.Action();
-                
-                AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("[gray]Press any key to continue...[/]");
-                Console.ReadKey();
+                break;
             }
+                
+            AnsiConsole.Clear();
+
+            await Execute(number);
+            
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[gray]Press any key to continue...[/]");
+            Console.ReadKey();
         }
     }
 }
