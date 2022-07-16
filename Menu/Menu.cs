@@ -1,7 +1,6 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
-using Spotiloader.API;
 
 namespace Spotiloader.Menu;
 
@@ -9,12 +8,10 @@ public class Menu : IMenu
 {
     public List<IMenuItem> MenuItems { get; set; } = new();
     private readonly IServiceProvider _serviceProvider;
-    private readonly SpotifyService _spotifyService;
     public bool IsAuthenticated;
-    public Menu(IServiceProvider serviceProvider, SpotifyService spotifyService)
+    public Menu(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
-        _spotifyService = spotifyService;
     }
 
     public void LoadOptions()
@@ -43,7 +40,7 @@ public class Menu : IMenu
         }
     }
 
-    public async void Show()
+    public void Show()
     {
         AnsiConsole.Clear();
 
