@@ -15,6 +15,7 @@
       <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1" />
       <PackageReference Include="Spectre.Console" Version="0.44.0" />
       <PackageReference Include="SpotifyAPI.Web.Auth" Version="6.2.2" />
+      <PackageReference Include="YoutubeExplode" Version="6.2.0" />
     </ItemGroup>
 
 </Project>
