@@ -16,7 +16,7 @@ public class SpotifyService
 {
     private SpotifyApplication _spotifyApiSettings = null!;
     private SpotifyClient? _client;
-    private YoutubeService _youtubeService;
+    private readonly YoutubeService _youtubeService;
 
     public SpotifyService(YoutubeService youtubeService)
     {
