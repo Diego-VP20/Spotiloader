@@ -16,6 +16,12 @@ public class SpotifyService
 {
     private SpotifyApplication _spotifyApiSettings = null!;
     private SpotifyClient? _client;
+    private YoutubeService _youtubeService;
+
+    public SpotifyService(YoutubeService youtubeService)
+    {
+        _youtubeService = youtubeService;
+    }
     
     public async Task Init(SpotifyApplication config)
     {
@@ -37,10 +43,10 @@ public class SpotifyService
         }
         catch (APIException)
         {
-            
+            _client = null;
         }
     }
-
+    
     private static LinkType GetLinkType(string link, out string? id)
     {
         if (link.StartsWith("https://open.spotify.com/track/"))
@@ -67,18 +73,36 @@ public class SpotifyService
     
     public bool IsAuthenticated() => _client != null;
 
-    public async void Test(string url)
+    public async Task<string?> GetTrackNameByUrlAsync(string url)
     {
         if (GetLinkType(url, out var id) == LinkType.Track)
         {
-            if (_client == null) return;
-            
-            var track = await _client.Tracks.Get(id!);
-            AnsiConsole.MarkupLine($"[darkcyan bold]Track: {track.Name}[/]");
+            var track = await _client!.Tracks.Get(id!);
+            return track.Name + " " + track.Artists.First().Name;
         }
-        else
+
+        AnsiConsole.MarkupLine("[orange3] Invalid link type[/]");
+        return null;
+    }
+
+    public async Task DownloadTrackByName(string name)
+    {
+        var result = await _youtubeService.DownloadSongByName(name);
+
+        switch (result)
         {
-            AnsiConsole.MarkupLine("[orange3] Invalid link type[/]");
+            case DownloadStatus.Downloaded:
+                AnsiConsole.MarkupLine("[green bold]Downloaded successfully[/]");
+                AnsiConsole.MarkupLine($"[green bold]File path: [/]{_youtubeService.GetDownloadPath}");
+                break;
+            case DownloadStatus.NotFound:
+                AnsiConsole.MarkupLine("[orange3 bold]No results found[/]");
+                break;
+            case DownloadStatus.Failed:
+                AnsiConsole.MarkupLine("[red bold]Error downloading Song[/]");
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(result.ToString());
         }
     }
 }
